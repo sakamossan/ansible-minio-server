@@ -1,0 +1,66 @@
+---
+- name: create minio group
+  group:
+    name: minio
+    state: present
+
+- name: create minio group
+  user:
+    name: minio
+    shell: /bin/bash
+    group: minio
+
+- name: install jq
+  apt:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - jq
+
+- name: make minio directory
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: minio
+    group: minio
+    mode: 0755
+  with_items:
+    - /var/minio
+    - /home/minio/.minio
+
+- name: download minio
+  get_url:
+    # https://www.minio.io/downloads/#minio-server
+    url: https://dl.minio.io/server/minio/release/linux-amd64/minio
+    dest: /usr/local/bin/minio
+    mode: 0755
+
+- name: create minio init-script
+  template:
+    src: minio.init.sh
+    dest: /etc/init.d/minio
+    mode: 0755
+  notify:
+    - restart minio server
+
+- name: create minio config.json
+  template:
+    src: minio.config.json
+    dest: /home/minio/.minio/config.json
+    mode: 0644
+  notify:
+    - restart minio server
+
+- name: create minio config.json
+  template:
+    src: minio.config.json
+    dest: /home/minio/.minio/config.json
+    mode: 0644
+  notify:
+    - restart minio server
+
+- name: Register minio as a service
+  service:
+    name: minio
+    state: started
+    enabled: on
